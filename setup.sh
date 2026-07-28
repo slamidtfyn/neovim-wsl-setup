@@ -3,7 +3,8 @@ set -e
 
 echo "=== 1. Checking / Installing System Dependencies ==="
 sudo apt-get update
-sudo apt-get install -y curl git build-essential unzip tar ripgrep fd-find xclip
+# Added wl-clipboard for native Ubuntu Wayland support
+sudo apt-get install -y curl git build-essential unzip tar ripgrep fd-find xclip wl-clipboard
 
 # Ensure standard binary symlink for fd-find if needed
 if ! command -v fd &> /dev/null && command -v fdfind &> /dev/null; then
@@ -14,6 +15,12 @@ echo "=== 2. Checking Neovim Version ==="
 MIN_VERSION="0.10.0"
 NEEDS_INSTALL=true
 
+# On Ubuntu 26.04, apt might already provide nvim >= 0.10
+if ! command -v nvim &> /dev/null; then
+  echo "Neovim not found. Attempting apt install first..."
+  sudo apt-get install -y neovim
+fi
+
 if command -v nvim &> /dev/null; then
   CURRENT_VERSION=$(nvim --version | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
   echo "Current Neovim version: $CURRENT_VERSION"
@@ -22,7 +29,7 @@ if command -v nvim &> /dev/null; then
     echo "Neovim version is sufficient (>= $MIN_VERSION)."
     NEEDS_INSTALL=false
   else
-    echo "Neovim version is below $MIN_VERSION. Upgrading..."
+    echo "Neovim version is below $MIN_VERSION. Upgrading manually..."
   fi
 fi
 
@@ -57,7 +64,7 @@ vim.opt.expandtab = true
 vim.opt.smartindent = true
 vim.opt.termguicolors = true       
 vim.opt.mouse = "a"                
-vim.opt.clipboard = "unnamedplus"  
+vim.opt.clipboard = "unnamedplus"  -- Uses wl-clipboard on Ubuntu 26.04
 
 vim.keymap.set("n", "<C-b>", ":Neotree toggle<CR>", { silent = true })      
 vim.keymap.set("n", "<C-p>", ":Telescope find_files<CR>", { silent = true }) 
@@ -158,7 +165,7 @@ require("lazy").setup({
 
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-      -- Neovim 0.11+ API Check
+      -- Neovim 0.11+ Safe API check
       if vim.lsp.config then
         for _, server in ipairs(servers) do
           vim.lsp.config[server] = vim.lsp.config[server] or {}
@@ -166,7 +173,6 @@ require("lazy").setup({
           vim.lsp.enable(server)
         end
       else
-        -- Fallback for Neovim 0.10.x
         local lspconfig = require("lspconfig")
         for _, server in ipairs(servers) do
           lspconfig[server].setup({ capabilities = capabilities })
