@@ -18,7 +18,6 @@ if command -v nvim &> /dev/null; then
   CURRENT_VERSION=$(nvim --version | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
   echo "Current Neovim version: $CURRENT_VERSION"
   
-  # Higher version check
   if [ "$(printf '%s\n' "$MIN_VERSION" "$CURRENT_VERSION" | sort -V | head -n1)" = "$MIN_VERSION" ]; then
     echo "Neovim version is sufficient (>= $MIN_VERSION)."
     NEEDS_INSTALL=false
@@ -34,13 +33,12 @@ if [ "$NEEDS_INSTALL" = true ]; then
   sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
   rm nvim-linux-x86_64.tar.gz
   
-  # Ensure /opt/nvim-linux-x86_64/bin is linked globally
   sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
   echo "Neovim successfully upgraded to: $(nvim --version | head -n1)"
 fi
 
 echo "=== 3. Cleaning Up Previous Neovim Cache/State ==="
-rm -rf ~/.local/share/nvim/mason ~/.cache/nvim
+rm -rf ~/.local/share/nvim ~/.cache/nvim ~/.config/nvim
 
 echo "=== 4. Creating ~/.config/nvim Directory Structure ==="
 mkdir -p ~/.config/nvim
@@ -126,6 +124,7 @@ require("lazy").setup({
   -- Fuzzy Finder
   {
     "nvim-telescope/telescope.nvim",
+    version = "0.1.*",
     dependencies = { "nvim-lua/plenary.nvim" },
   },
 
@@ -174,9 +173,10 @@ require("lazy").setup({
   -- LSP & Autocompletion
   {
     "williamboman/mason.nvim",
+    version = "v1.*",
     dependencies = {
-      "williamboman/mason-lspconfig.nvim",
-      "neovim/nvim-lspconfig",
+      { "williamboman/mason-lspconfig.nvim", version = "v1.*" },
+      { "neovim/nvim-lspconfig", version = "v1.*" },
       "hrsh7th/nvim-cmp",
       "hrsh7th/cmp-nvim-lsp",
       "hrsh7th/cmp-buffer",
