@@ -124,7 +124,6 @@ require("lazy").setup({
   -- Fuzzy Finder
   {
     "nvim-telescope/telescope.nvim",
-    version = "0.1.*",
     dependencies = { "nvim-lua/plenary.nvim" },
   },
 
@@ -173,10 +172,9 @@ require("lazy").setup({
   -- LSP & Autocompletion
   {
     "williamboman/mason.nvim",
-    version = "v1.*",
     dependencies = {
-      { "williamboman/mason-lspconfig.nvim", version = "v1.*" },
-      { "neovim/nvim-lspconfig", version = "v1.*" },
+      "williamboman/mason-lspconfig.nvim",
+      "neovim/nvim-lspconfig",
       "hrsh7th/nvim-cmp",
       "hrsh7th/cmp-nvim-lsp",
       "hrsh7th/cmp-buffer",
@@ -190,15 +188,17 @@ require("lazy").setup({
       local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
+      local servers = { "ts_ls", "pyright", "html", "cssls" }
+
       mason_lspconfig.setup({
-        ensure_installed = { "ts_ls", "pyright", "html", "cssls" },
+        ensure_installed = servers,
       })
 
-      mason_lspconfig.setup_handlers({
-        function(server_name)
-          lspconfig[server_name].setup({ capabilities = capabilities })
-        end,
-      })
+      for _, server in ipairs(servers) do
+        lspconfig[server].setup({
+          capabilities = capabilities,
+        })
+      end
 
       -- Autocompletion setup
       local cmp = require("cmp")
