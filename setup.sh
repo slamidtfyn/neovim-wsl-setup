@@ -48,26 +48,24 @@ cat << 'EOF' > ~/.config/nvim/init.lua
 -- ============================================================================
 -- 1. BASIC OPTIONS & KEYMAPS
 -- ============================================================================
-vim.g.mapleader = " "              -- Space key as Leader
-vim.opt.number = true              -- Line numbers
-vim.opt.relativenumber = true      -- Relative line numbers
-vim.opt.tabstop = 4                -- 4 spaces per tab
+vim.g.mapleader = " "              
+vim.opt.number = true              
+vim.opt.relativenumber = true      
+vim.opt.tabstop = 4                
 vim.opt.shiftwidth = 4
-vim.opt.expandtab = true           -- Tabs -> spaces
+vim.opt.expandtab = true           
 vim.opt.smartindent = true
-vim.opt.termguicolors = true       -- True color support
-vim.opt.mouse = "a"                -- Mouse support
-vim.opt.clipboard = "unnamedplus"  -- Sync with system/Windows clipboard
+vim.opt.termguicolors = true       
+vim.opt.mouse = "a"                
+vim.opt.clipboard = "unnamedplus"  
 
--- Keymaps (VS Code style)
-vim.keymap.set("n", "<C-b>", ":Neotree toggle<CR>", { silent = true })      -- Ctrl+B: Toggle File Explorer
-vim.keymap.set("n", "<C-p>", ":Telescope find_files<CR>", { silent = true }) -- Ctrl+P: File Search
-vim.keymap.set("n", "<C-f>", ":Telescope live_grep<CR>", { silent = true })  -- Ctrl+F: Text Search
+vim.keymap.set("n", "<C-b>", ":Neotree toggle<CR>", { silent = true })      
+vim.keymap.set("n", "<C-p>", ":Telescope find_files<CR>", { silent = true }) 
+vim.keymap.set("n", "<C-f>", ":Telescope live_grep<CR>", { silent = true })  
 
--- Diffview Keymaps
-vim.keymap.set("n", "<leader>dv", ":DiffviewOpen<CR>", { silent = true, desc = "Open Git Diff View" })
-vim.keymap.set("n", "<leader>dc", ":DiffviewClose<CR>", { silent = true, desc = "Close Git Diff View" })
-vim.keymap.set("n", "<leader>dh", ":DiffviewFileHistory %<CR>", { silent = true, desc = "Current File History" })
+vim.keymap.set("n", "<leader>dv", ":DiffviewOpen<CR>", { silent = true })
+vim.keymap.set("n", "<leader>dc", ":DiffviewClose<CR>", { silent = true })
+vim.keymap.set("n", "<leader>dh", ":DiffviewFileHistory %<CR>", { silent = true })
 
 -- ============================================================================
 -- 2. BOOTSTRAP LAZY.NVIM
@@ -86,7 +84,6 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 -- ============================================================================
 require("lazy").setup({
-  -- Theme
   {
     "folke/tokyonight.nvim",
     lazy = false,
@@ -95,19 +92,11 @@ require("lazy").setup({
       vim.cmd([[colorscheme tokyonight-night]])
     end,
   },
-
-  -- File Explorer
   {
     "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons",
-      "MunifTanjim/nui.nvim",
-    },
+    dependencies = { "nvim-lua/plenary.nvim", "nvim-tree/nvim-web-devicons", "MunifTanjim/nui.nvim" },
   },
-
-  -- Syntax Highlighting
   {
     "nvim-treesitter/nvim-treesitter",
     branch = "master",
@@ -120,35 +109,22 @@ require("lazy").setup({
       })
     end,
   },
-
-  -- Fuzzy Finder
   {
     "nvim-telescope/telescope.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
   },
-
-  -- Git Integration: Gutter Signs & Line Blame
   {
     "lewis6991/gitsigns.nvim",
     event = "BufReadPre",
     config = function()
-      require("gitsigns").setup({
-        current_line_blame = true,
-        current_line_blame_opts = {
-          delay = 300,
-        },
-      })
+      require("gitsigns").setup({ current_line_blame = true })
     end,
   },
-
-  -- Git Integration: Full Diff & Branch Review Tool
   {
     "sindrets/diffview.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFileHistory" },
   },
-
-  -- Statusline
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -156,20 +132,13 @@ require("lazy").setup({
       require("lualine").setup({ options = { theme = "tokyonight" } })
     end,
   },
-
-  -- Floating Terminal
   {
     "akinsho/toggleterm.nvim",
     version = "*",
     config = function()
-      require("toggleterm").setup({
-        open_mapping = [[<C-`>]],
-        direction = "float",
-      })
+      require("toggleterm").setup({ open_mapping = [[<C-`>]], direction = "float" })
     end,
   },
-
-  -- LSP & Autocompletion
   {
     "williamboman/mason.nvim",
     dependencies = {
@@ -183,24 +152,27 @@ require("lazy").setup({
     },
     config = function()
       require("mason").setup()
+      
+      local servers = { "ts_ls", "pyright", "html", "cssls" }
+      require("mason-lspconfig").setup({ ensure_installed = servers })
 
-      local mason_lspconfig = require("mason-lspconfig")
-      local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-      local servers = { "ts_ls", "pyright", "html", "cssls" }
-
-      mason_lspconfig.setup({
-        ensure_installed = servers,
-      })
-
-      for _, server in ipairs(servers) do
-        lspconfig[server].setup({
-          capabilities = capabilities,
-        })
+      -- Neovim 0.11+ API Check
+      if vim.lsp.config then
+        for _, server in ipairs(servers) do
+          vim.lsp.config[server] = vim.lsp.config[server] or {}
+          vim.lsp.config[server].capabilities = capabilities
+          vim.lsp.enable(server)
+        end
+      else
+        -- Fallback for Neovim 0.10.x
+        local lspconfig = require("lspconfig")
+        for _, server in ipairs(servers) do
+          lspconfig[server].setup({ capabilities = capabilities })
+        end
       end
 
-      -- Autocompletion setup
       local cmp = require("cmp")
       cmp.setup({
         mapping = cmp.mapping.preset.insert({
@@ -209,9 +181,7 @@ require("lazy").setup({
           ["<S-Tab>"] = cmp.mapping.select_prev_item(),
         }),
         sources = cmp.config.sources({
-          { name = "nvim_lsp" },
-          { name = "buffer" },
-          { name = "path" },
+          { name = "nvim_lsp" }, { name = "buffer" }, { name = "path" },
         }),
       })
     end,
